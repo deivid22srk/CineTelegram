@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cine_telegram/providers/media_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,11 +26,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
   ChewieController? _chewieController;
   bool _isLoading = true;
   String? _error;
+  Timer? _saveTimer;
+  int _lastSavedPosition = -1;
 
   @override
   void initState() {
     super.initState();
     _initializePlayer();
+    _startSaveTimer();
   }
 
   Future<void> _initializePlayer() async {
@@ -37,10 +41,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final url = await mediaProvider.getMediaStreamUrl(widget.telegramFileId);
 
     if (url == null) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Erro ao carregar link do vídeo. Verifique as configurações do bot.';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Erro ao carregar link do vídeo. Verifique as configurações do bot.';
+        });
+      }
       return;
     }
 
@@ -68,29 +74,41 @@ class _PlayerScreenState extends State<PlayerScreen> {
         ),
       );
 
-      _videoPlayerController!.addListener(_saveProgress);
-
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Erro ao inicializar player: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Erro ao inicializar player: $e';
+        });
+      }
     }
+  }
+
+  void _startSaveTimer() {
+    _saveTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _saveProgress();
+    });
   }
 
   void _saveProgress() {
     if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
       final currentPosition = _videoPlayerController!.value.position.inSeconds;
-      Provider.of<MediaProvider>(context, listen: false).saveProgress(widget.progressId, currentPosition);
+      if (currentPosition != _lastSavedPosition) {
+        Provider.of<MediaProvider>(context, listen: false).saveProgress(widget.progressId, currentPosition);
+        _lastSavedPosition = currentPosition;
+      }
     }
   }
 
   @override
   void dispose() {
-    _videoPlayerController?.removeListener(_saveProgress);
+    _saveTimer?.cancel();
+    _saveProgress(); // Final save on exit
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     super.dispose();
