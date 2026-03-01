@@ -1,5 +1,6 @@
 import 'package:cine_telegram/providers/media_provider.dart';
 import 'package:cine_telegram/screens/home_screen.dart';
+import 'package:cine_telegram/services/foreground_service.dart';
 import 'package:cine_telegram/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ForegroundService.init();
   final prefs = await SharedPreferences.getInstance();
   final storageService = StorageService(prefs);
 

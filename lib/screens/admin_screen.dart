@@ -18,6 +18,8 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   final _botTokenController = TextEditingController();
   final _groupIdController = TextEditingController();
+  final _apiIdController = TextEditingController();
+  final _apiHashController = TextEditingController();
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -36,6 +38,8 @@ class _AdminScreenState extends State<AdminScreen> {
     final provider = Provider.of<MediaProvider>(context, listen: false);
     _botTokenController.text = provider.botToken ?? '';
     _groupIdController.text = provider.groupId ?? '';
+    _apiIdController.text = provider.apiId ?? '';
+    _apiHashController.text = provider.apiHash ?? '';
   }
 
   @override
@@ -51,11 +55,17 @@ class _AdminScreenState extends State<AdminScreen> {
             const SizedBox(height: 10),
             TextField(controller: _botTokenController, decoration: const InputDecoration(labelText: 'Bot Token')),
             TextField(controller: _groupIdController, decoration: const InputDecoration(labelText: 'Group ID')),
+            TextField(controller: _apiIdController, decoration: const InputDecoration(labelText: 'API ID')),
+            TextField(controller: _apiHashController, decoration: const InputDecoration(labelText: 'API HASH')),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                Provider.of<MediaProvider>(context, listen: false)
-                    .updateSettings(_botTokenController.text, _groupIdController.text);
+                Provider.of<MediaProvider>(context, listen: false).updateSettings(
+                  token: _botTokenController.text,
+                  groupId: _groupIdController.text,
+                  apiId: _apiIdController.text,
+                  apiHash: _apiHashController.text,
+                );
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configurações salvas!')));
               },
               child: const Text('Salvar Configurações'),

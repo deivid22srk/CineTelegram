@@ -1,5 +1,5 @@
 name: cine_telegram
-description: "A movie and series app using Telegram as backend."
+description: "A movie and series app using Telegram as backend with local streaming server and MTProto support."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -21,7 +21,11 @@ dependencies:
   intl: ^0.18.1
   path_provider: ^2.1.1
   json_annotation: ^4.8.1
-  uuid: ^4.5.3
+  uuid: ^4.2.1
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+  flutter_foreground_task: ^6.1.1
+  url_launcher: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -32,5 +36,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # assets:
-  #   - assets/images/
