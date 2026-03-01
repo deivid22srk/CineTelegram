@@ -11,6 +11,8 @@ class MediaProvider extends ChangeNotifier {
   List<Media> _mediaList = [];
   String? _botToken;
   String? _groupId;
+  String? _apiId;
+  String? _apiHash;
 
   MediaProvider(this.storageService) {
     _loadFromStorage();
@@ -22,6 +24,8 @@ class MediaProvider extends ChangeNotifier {
   List<Series> get series => _mediaList.whereType<Series>().toList();
   String? get botToken => _botToken;
   String? get groupId => _groupId;
+  String? get apiId => _apiId;
+  String? get apiHash => _apiHash;
 
   void _loadFromStorage() {
     final List<Map<String, dynamic>> data = storageService.getMediaList();
@@ -40,14 +44,28 @@ class MediaProvider extends ChangeNotifier {
     if (settings != null) {
       _botToken = settings['token'];
       _groupId = settings['groupId'];
+      _apiId = settings['apiId'];
+      _apiHash = settings['apiHash'];
     }
     notifyListeners();
   }
 
-  Future<void> updateSettings(String token, String groupId) async {
+  Future<void> updateSettings({
+    required String token,
+    required String groupId,
+    required String apiId,
+    required String apiHash,
+  }) async {
     _botToken = token;
     _groupId = groupId;
-    await storageService.saveTelegramSettings(token, groupId);
+    _apiId = apiId;
+    _apiHash = apiHash;
+    await storageService.saveTelegramSettings(
+      token: token,
+      groupId: groupId,
+      apiId: apiId,
+      apiHash: apiHash,
+    );
     notifyListeners();
   }
 

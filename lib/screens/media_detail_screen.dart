@@ -2,8 +2,13 @@ import 'package:cine_telegram/models/episode.dart';
 import 'package:cine_telegram/models/media.dart';
 import 'package:cine_telegram/models/movie.dart';
 import 'package:cine_telegram/models/series.dart';
+import 'package:cine_telegram/providers/media_provider.dart';
 import 'package:cine_telegram/screens/player_screen.dart';
+import 'package:cine_telegram/services/foreground_service.dart';
+import 'package:cine_telegram/services/streaming_server.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class MediaDetailScreen extends StatelessWidget {
@@ -43,8 +48,11 @@ class MediaDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (media is Movie)
+                  if (media is Movie) ...[
                     _buildPlayButton(context, (media as Movie).telegramFileId, media.title, media.id),
+                    const SizedBox(height: 10),
+                    _buildExternalPlayerButton(context, (media as Movie).telegramFileId, media.title),
+                  ],
                   const SizedBox(height: 16),
                   Text(
                     media.description,
@@ -138,8 +146,49 @@ class MediaDetailScreen extends StatelessWidget {
       ),
       title: Text('${episode.number}. ${episode.title}', style: const TextStyle(fontSize: 14)),
       subtitle: Text(episode.description, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+      trailing: IconButton(
+        icon: const Icon(Icons.open_in_new),
+        onPressed: () => _playInExternalPlayer(context, episode.telegramFileId, episode.title),
+      ),
       onTap: () => _navigateToPlayer(context, episode.telegramFileId, episode.title, episode.id),
     );
+  }
+
+  Widget _buildExternalPlayerButton(BuildContext context, String fileId, String title) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 45),
+        foregroundColor: Colors.white,
+      ),
+      onPressed: () => _playInExternalPlayer(context, fileId, title),
+      icon: const Icon(Icons.open_in_new),
+      label: const Text('Abrir em Player Externo'),
+    );
+  }
+
+  void _playInExternalPlayer(BuildContext context, String fileId, String title) async {
+    final provider = Provider.of<MediaProvider>(context, listen: false);
+
+    // 1. Start foreground service and server
+    await ForegroundService.start();
+    await StreamingServer().start(
+      provider.botToken ?? '',
+      provider.apiId ?? '',
+      provider.apiHash ?? '',
+    );
+
+    // 2. Get local stream URL
+    final url = StreamingServer().getStreamUrl(fileId);
+
+    // 3. Launch the URL
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível abrir o player externo.')));
+      }
+    }
   }
 
   void _navigateToPlayer(BuildContext context, String telegramFileId, String title, String progressId) {

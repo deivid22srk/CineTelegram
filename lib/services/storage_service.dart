@@ -10,12 +10,10 @@ class StorageService {
 
   StorageService(this.prefs);
 
-  /// Saves the list of media (movies/series) locally.
   Future<void> saveMediaList(List<Map<String, dynamic>> mediaList) async {
     await prefs.setString(keyMediaList, json.encode(mediaList));
   }
 
-  /// Retrieves the list of media from local storage.
   List<Map<String, dynamic>> getMediaList() {
     final String? data = prefs.getString(keyMediaList);
     if (data == null) return [];
@@ -27,23 +25,29 @@ class StorageService {
     }
   }
 
-  /// Saves the playback progress (in seconds) for a media/episode ID.
   Future<void> saveProgress(String id, int seconds) async {
     await prefs.setInt('$keyProgressPrefix$id', seconds);
   }
 
-  /// Retrieves the saved playback progress (in seconds) for a media/episode ID.
   int getProgress(String id) {
     return prefs.getInt('$keyProgressPrefix$id') ?? 0;
   }
 
-  /// Saves Telegram Bot settings (token and group ID).
-  Future<void> saveTelegramSettings(String token, String groupId) async {
-    final settings = {'token': token, 'groupId': groupId};
+  Future<void> saveTelegramSettings({
+    required String token,
+    required String groupId,
+    required String apiId,
+    required String apiHash,
+  }) async {
+    final settings = {
+      'token': token,
+      'groupId': groupId,
+      'apiId': apiId,
+      'apiHash': apiHash,
+    };
     await prefs.setString(keyTelegramSettings, json.encode(settings));
   }
 
-  /// Retrieves the Telegram Bot settings.
   Map<String, String>? getTelegramSettings() {
     final String? data = prefs.getString(keyTelegramSettings);
     if (data == null) return null;
@@ -52,6 +56,8 @@ class StorageService {
       return {
         'token': decoded['token'] ?? '',
         'groupId': decoded['groupId'] ?? '',
+        'apiId': decoded['apiId'] ?? '',
+        'apiHash': decoded['apiHash'] ?? '',
       };
     } catch (e) {
       return null;
