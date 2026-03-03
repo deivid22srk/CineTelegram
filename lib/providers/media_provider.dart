@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:cine_telegram/models/media.dart';
 import 'package:cine_telegram/models/movie.dart';
 import 'package:cine_telegram/models/series.dart';
 import 'package:cine_telegram/services/storage_service.dart';
-import 'package:cine_telegram/services/telegram_service.dart';
+import 'package:cine_telegram/services/telegram_mtproto_service.dart';
 import 'package:flutter/material.dart';
 
 class MediaProvider extends ChangeNotifier {
@@ -13,6 +12,7 @@ class MediaProvider extends ChangeNotifier {
   String? _groupId;
   String? _apiId;
   String? _apiHash;
+  bool _isLoggedIn = false;
 
   MediaProvider(this.storageService) {
     _loadFromStorage();
@@ -26,6 +26,15 @@ class MediaProvider extends ChangeNotifier {
   String? get groupId => _groupId;
   String? get apiId => _apiId;
   String? get apiHash => _apiHash;
+  bool get isLoggedIn => _isLoggedIn;
+
+  Map<String, List<Media>> get mediaByCategory {
+    final Map<String, List<Media>> categories = {};
+    for (var media in _mediaList) {
+      categories.putIfAbsent(media.category, () => []).add(media);
+    }
+    return categories;
+  }
 
   void _loadFromStorage() {
     final List<Map<String, dynamic>> data = storageService.getMediaList();
@@ -84,6 +93,28 @@ class MediaProvider extends ChangeNotifier {
     await storageService.saveMediaList(data);
   }
 
+  Future<void> backup() async {
+    if (_botToken == null || _apiId == null || _apiHash == null || _groupId == null) return;
+    final service = TelegramMtprotoService(botToken: _botToken!, apiId: _apiId!, apiHash: _apiHash!);
+    final data = jsonEncode(_mediaList.map((e) => e.toJson()).toList());
+    await service.backupData(data, _groupId!);
+  }
+
+  Future<void> restore() async {
+    if (_botToken == null || _apiId == null || _apiHash == null || _groupId == null) return;
+    final service = TelegramMtprotoService(botToken: _botToken!, apiId: _apiId!, apiHash: _apiHash!);
+    final data = await service.restoreData(_groupId!);
+    if (data != null) {
+      final List<dynamic> decoded = jsonDecode(data);
+      _mediaList = decoded.map((json) {
+        if (json['type'] == 'series') return Series.fromJson(json);
+        return Movie.fromJson(json);
+      }).toList();
+      await _saveMediaListToStorage();
+      notifyListeners();
+    }
+  }
+
   Future<int> getProgress(String id) async {
     return storageService.getProgress(id);
   }
@@ -94,8 +125,7 @@ class MediaProvider extends ChangeNotifier {
   }
 
   Future<String?> getMediaStreamUrl(String telegramFileId) async {
-    if (_botToken == null || _botToken!.isEmpty) return null;
-    final telegramService = TelegramService(botToken: _botToken!, groupId: _groupId ?? '');
-    return await telegramService.getFileLink(telegramFileId);
+    // Logic uses StreamingServer localhost URL
+    return 'http://127.0.0.1:8080/stream/$telegramFileId';
   }
 }

@@ -16,6 +16,7 @@ Media _$MediaFromJson(Map<String, dynamic> json) => Media(
   year: (json['year'] as num).toInt(),
   genres: (json['genres'] as List<dynamic>).map((e) => e as String).toList(),
   type: $enumDecode(_$MediaTypeEnumMap, json['type']),
+  category: json['category'] as String? ?? 'Geral',
 );
 
 Map<String, dynamic> _$MediaToJson(Media instance) => <String, dynamic>{
@@ -28,6 +29,7 @@ Map<String, dynamic> _$MediaToJson(Media instance) => <String, dynamic>{
   'year': instance.year,
   'genres': instance.genres,
   'type': _$MediaTypeEnumMap[instance.type]!,
+  'category': instance.category,
 };
 
 const _$MediaTypeEnumMap = {

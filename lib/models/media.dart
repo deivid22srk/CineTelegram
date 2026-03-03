@@ -18,6 +18,7 @@ class Media {
   final int year;
   final List<String> genres;
   final MediaType type;
+  final String category; // New field
 
   Media({
     required this.id,
@@ -29,6 +30,7 @@ class Media {
     required this.year,
     required this.genres,
     required this.type,
+    this.category = 'Geral', // Default category
   });
 
   factory Media.fromJson(Map<String, dynamic> json) => _$MediaFromJson(json);
